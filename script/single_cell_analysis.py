@@ -2,6 +2,7 @@ import argparse, os, sys
 from os import listdir
 from os.path import isfile, join
 
+import pickle
 import math
 import collections
 
@@ -28,36 +29,27 @@ mpl.rcParams['font.size'] = 10
 mpl.rcParams['figure.dpi'] = 300
 sc.set_figure_params(dpi=300)
 
-def runGSEAPY(adata, group_by='louvain', gene_sets=['GO_Biological_Process_2021'], organism='Human', cutoff=0.05, logfc_threshold=2, outdir='.'):
+def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir='.'):
     import gseapy as gp
-    from gseapy.plot import barplot
 
     print('Running GSEAPY...')
     
+    with open('../data/GO_Biological_Process_2021.pkl', 'rb') as handle:
+        gene_sets = pickle.load(handle)
+
     df_list = []
     cluster_list = []
     celltypes = sorted(adata.obs[group_by].unique())
 
     for celltype in celltypes:
-        # degs = sc.get.rank_genes_groups_df(adata[adata.obs[group_by] == celltype], group=None, key='rank_genes_groups', log2fc_min=logfc_threshold, 
-        #                             pval_cutoff=cutoff)['names'].squeeze().str.strip().tolist()
-
-        indlist_logfc = adata.uns['rank_genes_groups']['logfoldchanges'][celltype] >= logfc_threshold
-        indlist_adjp = adata.uns['rank_genes_groups']['pvals_adj'][celltype] <= 1e-2
-        indlist_p = adata.uns['rank_genes_groups']['pvals'][celltype] <= 1e-2
-        #indlist_pts = adata.uns['rank_genes_groups']['pts'][celltype] >= 0.1
-        
-        indlist = indlist_logfc * indlist_adjp * indlist_p 
-
-        ind = [x for x in range(0, len(indlist)) if indlist[x] ]
-        degs = adata.uns['rank_genes_groups']['names'][celltype][ind].tolist()
+        degs = sc.get.rank_genes_groups_df(adata, group=celltype, key='rank_genes_groups', log2fc_min=logfc_threshold, 
+                                    pval_cutoff=cutoff)['names'].squeeze().str.strip().tolist()
         
         if not degs:
             continue
 
         enr = gp.enrichr(gene_list=degs,
                 gene_sets=gene_sets,
-                organism=organism, 
                 no_plot=True
                 )
                 
@@ -70,14 +62,13 @@ def runGSEAPY(adata, group_by='louvain', gene_sets=['GO_Biological_Process_2021'
     for cluster_ind, df_ in zip(cluster_list, df_list):
         df_ = df_[df_['Adjusted P-value'] <= cutoff]
         df_ = df_.assign(Cluster = cluster_ind)
-        print(df_)
         if(df_.shape[0] > 0):
             df = pd.concat([df, df_[columns]], sort=False)
             df_tmp = df_.loc[:, ['Term', 'Adjusted P-value']][:min(10, df_.shape[0])]
             df_tmp['Term'] = [x.split('(',1)[0] for x in df_tmp['Term']]
             df_tmp['-log_adj_p'] = - np.log10(df_tmp['Adjusted P-value'])
             df_tmp = df_tmp.sort_values(by='-log_adj_p', ascending=True)
-            ax = df_tmp.plot.barh(y='-log_adj_p', x='Term', legend=False, grid=False)
+            ax = df_tmp.plot.barh(y='-log_adj_p', x='Term', legend=False, grid=False, figsize=(12,4))
             ax.set_title('Cluster {}'.format(cluster_ind))
             ax.set_ylabel('')
             ax.set_xlabel('-log(Adjusted P-value)')
