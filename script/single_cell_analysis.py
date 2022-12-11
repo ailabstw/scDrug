@@ -34,7 +34,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
 
     print('Running GSEAPY...')
     
-    with open('../data/GO_Biological_Process_2021.pkl', 'rb') as handle:
+    with open('/scDrug/data/GO_Biological_Process_2021.pkl', 'rb') as handle:
         gene_sets = pickle.load(handle)
 
     df_list = []
