@@ -380,15 +380,15 @@ def annotation(adata, groups):
         dat.to_csv(os.path.join(args.output, 'cluster_mean_exp.csv'))
         
         os.system('python /opt/scMatch/scMatch.py --refDS /opt/scMatch/refDB/FANTOM5 \
-                --dFormat csv --testDS {} --coreNum {}'.format(
-                os.path.join(args.output, 'cluster_mean_exp.csv'), args.cpus))
+                --dFormat csv --refType {} --testType {} --testDS {} --coreNum {}'.format(
+                os.path.join(args.species, args.species, args.output, 'cluster_mean_exp.csv'), args.cpus))
         
         # Cell annotation result
-        scMatch_cluster_df = pd.read_csv(os.path.join(args.output, 'cluster_mean_exp') + '/annotation_result_keep_all_genes/human_Spearman_top_ann.csv')
+        scMatch_cluster_df = pd.read_csv(os.path.join(args.output, 'cluster_mean_exp') + '/annotation_result_keep_all_genes/{}_Spearman_top_ann.csv'.format(args.species))
         scMatch_cluster_names = [group + " " + scMatch_cluster_df.loc[scMatch_cluster_df['cell']==int(group)]\
                                 ['cell type'].tolist()[0] for group in groups]
         adata.obs['cell_type'] = adata.obs['louvain'].cat.rename_categories(scMatch_cluster_names)
-        scMatch_candidate_df = pd.read_excel(os.path.join(args.output, 'cluster_mean_exp') + '/annotation_result_keep_all_genes/human_Spearman.xlsx', skiprows=4, header=None, index_col=0)
+        scMatch_candidate_df = pd.read_excel(os.path.join(args.output, 'cluster_mean_exp') + '/annotation_result_keep_all_genes/{}_Spearman.xlsx'.format(args.species), skiprows=4, header=None, index_col=0)
         for i in range(len(scMatch_candidate_df.columns)):
             if i%2 == 0:
                 scMatch_candidate_df.iloc[:, i] = [x.split(',',1)[0].split(':',1)[0] for x in scMatch_candidate_df.iloc[:, i]]
@@ -577,6 +577,7 @@ parser.add_argument("-c", "--clusters", default=None, help="perform single cell 
 parser.add_argument("--cname", default='louvain', help="which variable should be used when selecting clusters; required when clusters are provided. Default: 'louvain'")
 parser.add_argument("--GEP", action="store_true", help=' generate Gene Expression Profile file.')
 parser.add_argument("--annotation", action="store_true", help="perform cell type annotation")
+parser.add_argument("--species", default="human", help="sample species. Options: human (default) | mouse")
 parser.add_argument("--gsea", action="store_true", help="perform gene set enrichment analysis (GSEA)")
 parser.add_argument("--cpus", default=1, type=int, help="number of CPU used for auto-resolution and annotation, default=1")
 parser.add_argument("--survival", action="store_true", help="perform survival analysis")
@@ -646,6 +647,9 @@ groups = sorted(adata.obs['louvain'].unique(), key=int)
 if args.GEP: 
     writeGEP(adata.raw.to_adata())
 if args.annotation:
+    if args.species not in ['human', 'mouse']:
+        print('Invalid species: {}. Use human instead.'.format(args.species))
+        args.species = 'human'
     adata =  annotation(adata, groups)
 adata = findDEG(adata, groups)
 if args.gsea:
