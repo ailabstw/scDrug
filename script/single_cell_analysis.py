@@ -381,7 +381,7 @@ def annotation(adata, groups):
         
         os.system('python /opt/scMatch/scMatch.py --refDS /opt/scMatch/refDB/FANTOM5 \
                 --dFormat csv --refType {} --testType {} --testDS {} --coreNum {}'.format(
-                os.path.join(args.species, args.species, args.output, 'cluster_mean_exp.csv'), args.cpus))
+                os.path.join( args.output, 'cluster_mean_exp.csv'), args.species, args.species, args.cpus))
         
         # Cell annotation result
         scMatch_cluster_df = pd.read_csv(os.path.join(args.output, 'cluster_mean_exp') + '/annotation_result_keep_all_genes/{}_Spearman_top_ann.csv'.format(args.species))
