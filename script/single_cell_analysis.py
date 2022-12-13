@@ -52,9 +52,9 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
                 gene_sets=gene_sets,
                 no_plot=True
                 )
-                
-        df_list.append(enr.res2d)
-        cluster_list.append(celltype)
+        if enr.res2d:
+            df_list.append(enr.res2d)
+            cluster_list.append(celltype)
 
     columns = ['Cluster', 'Gene_set', 'Term', 'Overlap', 'P-value', 'Adjusted P-value', 'Genes']
 
