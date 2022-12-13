@@ -52,7 +52,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
                 gene_sets=gene_sets,
                 no_plot=True
                 )
-        if enr.res2d:
+        if enr.res2d.shape[0] > 0:
             df_list.append(enr.res2d)
             cluster_list.append(celltype)
 
