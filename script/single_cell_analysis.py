@@ -43,7 +43,11 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
 
     for celltype in celltypes:
         degs = sc.get.rank_genes_groups_df(adata, group=celltype, key='rank_genes_groups', log2fc_min=logfc_threshold, 
-                                    pval_cutoff=cutoff)['names'].squeeze().str.strip().tolist()
+                                    pval_cutoff=cutoff)['names'].squeeze()
+        if isinstance(degs, str):
+            degs = degs.strip().tolist()
+        else:
+            degs = degs.str.strip().tolist()
         
         if not degs:
             continue
