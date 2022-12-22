@@ -56,7 +56,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
                 gene_sets=gene_sets,
                 no_plot=True
                 )
-        if enr.res2d and enr.res2d.shape[0] > 0:
+        if enr.res2d.shape[0] > 0:
             df_list.append(enr.res2d)
             cluster_list.append(celltype)
 
@@ -66,7 +66,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
     for cluster_ind, df_ in zip(cluster_list, df_list):
         df_ = df_[df_['Adjusted P-value'] <= cutoff]
         df_ = df_.assign(Cluster = cluster_ind)
-        if df_ and df_.shape[0] > 0:
+        if (df_.shape[0] > 0):
             df = pd.concat([df, df_[columns]], sort=False)
             df_tmp = df_.loc[:, ['Term', 'Adjusted P-value']][:min(10, df_.shape[0])]
             df_tmp['Term'] = [x.split('(',1)[0] for x in df_tmp['Term']]
