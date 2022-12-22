@@ -353,8 +353,9 @@ def clustering(adata):
                 use_raw=False, show=False, title='louvain, resolution='+str(res))
     pp.savefig(fig, bbox_inches='tight')
     plt.close()
+
     if not args.batch is None:
-        fig, ax = plt.subplots(dpi=300)
+        fig, ax = plt.subplots(dpi=300, figsize=(12,12))
         sc.pl.umap(adata, color=[args.batch], ax=ax, legend_loc='right margin',
                     frameon=False, legend_fontsize='medium', legend_fontoutline=2, legend_fontweight='normal',
                     use_raw=False, show=False, title=args.batch)
@@ -409,7 +410,7 @@ def annotation(adata, groups):
         df_candidate = pd.DataFrame(dict_candidates).T.reset_index().rename(columns={'index':'cluster'})
         del scMatch_candidate_df
 
-        fig, ax = plt.subplots(dpi=300)
+        fig, ax = plt.subplots(dpi=300, figsize=(12,12))
         sc.pl.umap(adata, color='louvain', ax=ax, legend_loc='on data', frameon=False, legend_fontsize='small', legend_fontoutline=2, legend_fontweight='normal', show=False)
         labels = sorted(adata.obs['cell_type'].unique(), key=lambda y: int(y.split(' ',1)[0]))
         for label in labels:
@@ -435,6 +436,7 @@ def annotation(adata, groups):
         # table.auto_set_font_size(False)
         # table.set_fontsize(8)
         table.auto_set_column_width(col=list(range(len(df_candidate.columns))))
+        table.scale(1, 1.8)
 
         for cell in table._cells:
             if cell[0] == 0:
