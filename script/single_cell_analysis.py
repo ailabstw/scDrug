@@ -45,7 +45,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
         degs = sc.get.rank_genes_groups_df(adata, group=celltype, key='rank_genes_groups', log2fc_min=logfc_threshold, 
                                     pval_cutoff=cutoff)['names'].squeeze()
         if isinstance(degs, str):
-            degs = degs.strip().tolist()
+            degs = [degs.strip()]
         else:
             degs = degs.str.strip().tolist()
         
@@ -56,7 +56,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
                 gene_sets=gene_sets,
                 no_plot=True
                 )
-        if enr.res2d.shape[0] > 0:
+        if ('enr.res2d' in locals()) and (enr.res2d.shape[0] > 0):
             df_list.append(enr.res2d)
             cluster_list.append(celltype)
 
