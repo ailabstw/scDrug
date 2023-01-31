@@ -5,6 +5,7 @@ from os.path import isfile, join
 import pickle
 import math
 import collections
+import time
 
 import numpy as np
 import pandas as pd
@@ -33,6 +34,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
     import gseapy as gp
 
     print('Running GSEAPY...')
+    start = time.time()
     
     with open('/scDrug/data/GO_Biological_Process_2021.pkl', 'rb') as handle:
         gene_sets = pickle.load(handle)
@@ -56,7 +58,7 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
                 gene_sets=gene_sets,
                 no_plot=True
                 )
-        if ('enr.res2d' in locals()) and (enr.res2d.shape[0] > 0):
+        if (enr is not None) and hasattr(enr, 'res2d') and (enr.res2d.shape[0] > 0):
             df_list.append(enr.res2d)
             cluster_list.append(celltype)
 
@@ -81,6 +83,10 @@ def runGSEAPY(adata, group_by='louvain', cutoff=0.05, logfc_threshold=2, outdir=
         else:
             print('No pathway with an adjusted P-value less than the cutoff (={}) for cluster {}'.format(cutoff, cluster_ind))
     df.to_csv(os.path.join(args.output, 'GSEA_results.csv'))
+
+    end = time.time()
+    print('time: {}', end-start)
+
 
 def getBulkProfile(bulkpath, gencode_table):
     bk_gep = pd.read_csv(bulkpath, sep=',', compression='gzip')
@@ -188,6 +194,7 @@ def drawSurvivalPlot(dict_celltype, clinical_df, project_id):
 def readFile():
     # Output: adata with raw count and metadata
     print('Reading files...')
+    start = time.time()
     # check metadata
     if not args.metadata is None:
         if not os.path.exists(args.metadata):
@@ -222,6 +229,8 @@ def readFile():
             adata = adata[adata.obs[args.cname].isin(clusters)]
         else:
             sys.exit(f"{args.cname} cannot be found in data.")
+    end = time.time()
+    print('time: {}', end-start)
     return adata
 
 def writeGEP(adata_GEP):
@@ -249,9 +258,12 @@ def preprocessing(adata):
     sc.pp.log1p(adata)
     if args.impute:
         print('Doing imputation...')
+        start = time.time()
         bk_adata_raw = adata.raw.to_adata()
         sc.external.pp.magic(adata)
         adata.raw = bk_adata_raw
+        end = time.time()
+        print('time: {}', end-start)
     sc.pp.highly_variable_genes(adata)
     if 'features' in adata.raw.var.columns:
         adata.raw.var.index = adata.raw.var['features']
@@ -264,14 +276,18 @@ def preprocessing(adata):
 def batchCorrect(adata):
     if args.batch in adata.obs.columns:
         print('Batch correction...')
+        start = start.time()
         adata.obs[args.batch] = adata.obs[args.batch].astype(str)
         sc.external.pp.harmony_integrate(adata, args.batch, adjusted_basis='X_pca')
+        end = time.time()
+        print('time: {}', end-start)
     else:
         print('Skip batch correction...')
     return adata
 
 def autoResolution(adata):
     print("Automatically determine clustering resolution...")
+    start = time.time()
     def subsample_clustering(adata, sample_n, subsample_n, resolution, subsample):
         subadata = adata[subsample]
         sc.tl.louvain(subadata, resolution=resolution)
@@ -300,6 +316,7 @@ def autoResolution(adata):
     for r in resolutions:
         r = np.round(r, 1)
         print("Clustering test: resolution = ", r)
+        sub_start = time.time()
         subsamples = [np.random.choice(sample_n, subsample_n, replace=False) for t in range(rep_n)]
         p = mp.Pool(args.cpus)
         func = partial(subsample_clustering, adata, sample_n, subsample_n, r)
@@ -320,6 +337,8 @@ def autoResolution(adata):
             highest_sil = silhouette_avg[str(r)]
             best_resolution = r
         print("robustness score = ", silhouette_avg[str(r)])
+        sub_end = time.time()
+        print('time: {}', sub_end - sub_start)
         print()
     adata.obs['louvain'] = adata.obs['louvain_r' + str(best_resolution)]
     print("resolution with highest score: ", best_resolution)
@@ -331,6 +350,8 @@ def autoResolution(adata):
     df_sil.plot.line(style='.-', color='green', title='Auto Resolution', xticks=resolutions, xlabel='resolution', ylabel='silhouette score', legend=False)
     pp.savefig()
     plt.close()
+    end = time.time()
+    print('time: {}', end-start)
     return adata, res
 
 def clustering(adata):
