@@ -276,7 +276,7 @@ def preprocessing(adata):
 def batchCorrect(adata):
     if args.batch in adata.obs.columns:
         print('Batch correction...')
-        start = start.time()
+        start = time.time()
         adata.obs[args.batch] = adata.obs[args.batch].astype(str)
         sc.external.pp.harmony_integrate(adata, args.batch, adjusted_basis='X_pca')
         end = time.time()
