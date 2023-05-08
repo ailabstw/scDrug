@@ -1,4 +1,4 @@
-scanpy==1.9.2
+scanpy==1.9.3
 leidenalg==0.8.10
 numpy==1.23.1
 pandas==1.4.3
@@ -14,3 +14,4 @@ kaplanmeier==0.1.8
 lifelines==0.27.1
 magic-impute==3.0.0
 scikit-learn==0.24.2
+rdkit==2022.03.4
